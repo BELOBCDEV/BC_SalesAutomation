@@ -26,11 +26,13 @@ pageextension 68803 BMGSerialLotNoNotValidExt extends "LSC Serial/Lot No. Not Va
                     recLSCTransStatus: Record "LSC Transaction Status";
                     recItemLedgEntry: Record "Item Ledger Entry" temporary;
                     recLSCTransSales: Record "LSC Trans. Sales Entry";
+                    recLSCTransSales2: Record "LSC Trans. Sales Entry";
                     codItemReclassMgt: Codeunit BMGItemReclassMgt;
                     Text001: Label 'There are no Lot No.s available for Item %1 at Location %2.';
                     codDocumentNo: Code[20];
                     txtStorePref: text[2];
                     intItemWithNoLotCount: Integer;
+                    decTransSalesQtyPerItem: Decimal;
                 begin
                     recLSCTransSales.Reset();
                     recLSCTransSales.SetRange("Trans. Date", WorkDate());
@@ -55,10 +57,21 @@ pageextension 68803 BMGSerialLotNoNotValidExt extends "LSC Serial/Lot No. Not Va
                             if not ItemLedgerEntry.FindFirst() then
                                 intItemWithNoLotCount += 1;
 
-                            ItemLedgerEntry.SetFilter("Remaining Quantity", '>%1', ABS(recLSCTransSales.Quantity));
+                            recLSCTransSales2.Reset();
+                            recLSCTransSales2.SetRange("Trans. Date", WorkDate());
+                            recLSCTransSales2.SetRange("Store No.", recLSCTransSales."Store No.");
+                            recLSCTransSales2.SetFilter("Item No.", recLSCTransSales."Item No.");
+
+                            decTransSalesQtyPerItem := 0;
+
+                            if recLSCTransSales2.FindFirst() then
+                                repeat
+                                    decTransSalesQtyPerItem += ABS(recLSCTransSales2.Quantity);
+                                until recLSCTransSales2.Next() = 0;
+
+                            ItemLedgerEntry.SetFilter("Remaining Quantity", '>%1', ABS(decTransSalesQtyPerItem));
                             ItemLedgerEntry.SetRange("Reserved Quantity", 0);
                             ItemLedgerEntry.SetFilter("Entry Type", '<>%1', ItemLedgerEntry."Entry Type"::Sale);
-
 
                             if ItemLedgerEntry.FindFirst() then begin
                                 recStore.Reset();
