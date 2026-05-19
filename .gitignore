@@ -1,0 +1,10 @@
+# Compiled AL app packages
+*.app
+
+# AL dependency packages
+.alpackages/
+
+# VS Code local settings (keep workspace settings)
+.vscode/settings.json
+.vscode/.browse.VC.db*
+.vscode/.alcache/
