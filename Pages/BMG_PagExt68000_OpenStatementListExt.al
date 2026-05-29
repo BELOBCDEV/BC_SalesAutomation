@@ -14,8 +14,13 @@ pageextension 68800 BMGOpenStatementListExt extends "LSC Open Statement List"
                 ApplicationArea = All;
             }
         }
-
-
+        addafter("No.")
+        {
+            field(StoreName; txtStoreName)
+            {
+                ApplicationArea = All;
+            }
+        }
     }
 
     actions
@@ -156,8 +161,6 @@ pageextension 68800 BMGOpenStatementListExt extends "LSC Open Statement List"
                     bolWithError := true;
                 if recLSCTransStatus."Blocked Customer" = true then
                     bolWithError := true;
-                if recLSCTransStatus."Serial/Lot No. Not Valid" > 0 then
-                    bolWithError := true;
                 if recLSCTransStatus."No. of Blank UOM Item" > 0 then
                     bolWithError := true;
                 if recLSCTransStatus."Items/Barc. Not on File" > 0 then
@@ -166,17 +169,18 @@ pageextension 68800 BMGOpenStatementListExt extends "LSC Open Statement List"
             until (recLSCTransStatus.Next() = 0) or (bolWithError = true);
 
 
-        /*Message('With Error: %1\UOM: %2\Cust: %3\Items: %4\Serial/Lot: %5', bolWithError,
-                 Rec."No. of Blank UOM Item",
-                 Rec."No. of Blocked Cust.",
-                 Rec."No. of Blocked Items",
-                 Rec."Serial/Lot No. Not Valid");
-        */
+        recStore.Reset();
+        recStore.SetRange("No.", Rec."Store No.");
 
+        if recStore.FindFirst() then
+            txtStoreName := recStore.Name;
+        CurrPage.Update(false);
     end;
 
     var
-        myInt: Integer;
+        recStore: Record "LSC Store";
+        txtStoreName: Text[100];
         bolWithDiff: Boolean;
         bolWithError: Boolean;
+
 }
