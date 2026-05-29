@@ -9,5 +9,11 @@ permissionset 68800 BMG_SalesAutomation
         codeunit BMGClearOpenStatement = X,
         codeunit BMGPOSStatementUtility = X,
         codeunit BMGItemReclassMgt = X,
-        codeunit BMGPostBulkOpenStatement = X;
+        codeunit BMGPostBulkOpenStatement = X,
+        codeunit BMGMondayDotComMgt = X,
+        tabledata BMGMondayTickets = RIMD,
+        table BMGMondayTickets = X,
+        page BMGMondayTickets = X,
+        codeunit SendMondayTickets = X,
+        page BMGMondayTicketList = X;
 }
