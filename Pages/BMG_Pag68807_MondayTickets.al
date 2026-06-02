@@ -156,7 +156,7 @@ page 68807 BMGMondayTickets
                         Format(Rec."BMG Priority"),
                         Format(Rec."BMG Location"),
                         Rec."BMG Description",
-                        Rec);
+                        Rec, 1);
                     CurrPage.Update(false);
                 end;
             }

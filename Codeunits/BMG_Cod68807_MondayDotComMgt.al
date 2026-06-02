@@ -33,7 +33,7 @@ codeunit 68807 BMGMondayDotComMgt
     ///                 Pass empty text to skip.
     /// </summary>
 
-    procedure ComposeTicket(pSubject: Text; pComment: Text; pTypeOfRequest: Text; pPriority: Text; pLocation: Text; pDescription: Text; var pRecMondayTicket: Record BMGMondayTickets): Text
+    procedure ComposeTicket(pSubject: Text; pComment: Text; pTypeOfRequest: Text; pPriority: Text; pLocation: Text; pDescription: Text; var pRecMondayTicket: Record BMGMondayTickets; pIntBoard: Integer): Text
     var
         recUser: Record User;
         recSalesSetup: Record "Sales & Receivables Setup";
@@ -42,6 +42,7 @@ codeunit 68807 BMGMondayDotComMgt
         RequesterEmail: Text;
         NewItemId: Text[50];
         IctTicketNo: Text;
+        BoardID: Text[50];
     begin
         recUser.Reset();
         recUser.SetRange("User Name", UserId);
@@ -67,7 +68,14 @@ codeunit 68807 BMGMondayDotComMgt
 
         recSalesSetup.Get();
         //'5026308475'
-        NewItemId := CreateTicket(recSalesSetup."Corp IT Ticket Board ID", 'topics', pSubject, ColValues, IctTicketNo);
+        case pIntBoard of
+            1:
+                BoardID := recSalesSetup."Corp IT Ticket Board ID";
+            2:
+                BoardID := recSalesSetup."Cross-Dept Request Board ID";
+        end;
+
+        NewItemId := CreateTicket(BoardID, 'topics', pSubject, ColValues, IctTicketNo);
 
         pRecMondayTicket."BMG Monday Item ID" := NewItemId;
         pRecMondayTicket."BMG Ticket ID" := FetchColumnText(NewItemId, 'pulse_id_mm02vm99');
