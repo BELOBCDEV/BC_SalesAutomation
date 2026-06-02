@@ -1,10 +1,15 @@
 codeunit 68806 BMGPostBulkOpenStatement
 {
     trigger OnRun()
+    var
+        recGItem: Record Item;
+        recGCustomer: Record Customer;
     begin
         recItem.DeleteAll();
         recItem2.DeleteAll();
         recTempStatement.DeleteAll();
+        recTempStatement2.DeleteAll();
+        recTempStatement3.DeleteAll();
 
         recOpenStatement.Reset();
         recOpenStatement.SetRange("Posting Date", WorkDate());
@@ -80,7 +85,7 @@ codeunit 68806 BMGPostBulkOpenStatement
 
                 if recOpenStatementLine.FindFirst() then
                     repeat
-                        if (recOpenStatementLine."Difference Amount" <> 0) and (recOpenStatementLine2."Counted Amount" <> 0) then begin
+                        if (recOpenStatementLine."Difference Amount" <> 0) and (recOpenStatementLine."Counted Amount" <> 0) then begin
                             recTenderDecl.Reset();
                             recTenderDecl.SetRange(Date, WorkDate());
                             recTenderDecl.SetRange("Store No.", recOpenStatementLine."Store No.");
@@ -100,7 +105,7 @@ codeunit 68806 BMGPostBulkOpenStatement
                                 recTempStatement."Store No." := recOpenStatementLine."Store No.";
                                 recTempStatement."No." := Format(intLineCtr);
                                 recTempStatement.Date := WorkDate();
-                                recTempStatement."Line Discount" := recOpenStatementLine."Difference Amount";
+                                recTempStatement."BMG Difference Amount" := recOpenStatementLine."Difference Amount";
                                 if recTempStatement.Insert() then;
 
                             end else
@@ -127,7 +132,7 @@ codeunit 68806 BMGPostBulkOpenStatement
 
                         if recTempStatement.FindFirst() then
                             repeat
-                                decDifferenceAmount += recTempStatement."Line Discount";
+                                decDifferenceAmount += recTempStatement."BMG Difference Amount";
                             until recTempStatement.Next() = 0;
 
                         txtSubject := txtStoreName + ' ' + Format(WorkDate()) + ' Shortage Amount - ' + Format(decDifferenceAmount);
@@ -136,7 +141,7 @@ codeunit 68806 BMGPostBulkOpenStatement
                         if recMondayTicket.FindLast() then begin
                             recMondayTicket2.Init();
                             recMondayTicket2."Entry No." := recMondayTicket."Entry No." + 1;
-                            recMondayTicket2."BMG Assignee ID" := '98458747';
+                            recMondayTicket2."BMG Assignee ID" := '100473531'; //RM- '98458747';
                             recMondayTicket2."BMG Subject" := txtSubject;
                             recMondayTicket2."BMG Comment" := StrSubstNo('The Statement No. is %1.', recOpenStatement."No.");
                             recMondayTicket2."Type of Request" := recMondayTicket2."Type of Request"::Incident;
@@ -153,7 +158,7 @@ codeunit 68806 BMGPostBulkOpenStatement
                              Format(recMondayTicket2."BMG Priority"),
                              Format(recMondayTicket2."BMG Location"),
                              recMondayTicket2."BMG Description",
-                             recMondayTicket2);
+                             recMondayTicket2, 2);
 
                         //codMondayMgt.ComposeTicket(txtSubject,
                         //StrSubstNo('The Statement No. %1 has been posted even though there is a difference amount.', recOpenStatement."No."),
@@ -183,6 +188,35 @@ codeunit 68806 BMGPostBulkOpenStatement
                     Clear(codPostOpenStatement);
                 end;
 
+                //block the item that was unblock before posting
+                recTempStatement2.Reset();
+                recTempStatement2.SetRange("No.", recItem."No.");
+
+                if recTempStatement2.FindFirst() then
+                    repeat
+                        recGItem.Reset();
+                        recGItem.SetRange("No.", recTempStatement2."No. Series.");
+
+                        if recGItem.FindFirst() then begin
+                            recGItem.Blocked := true;
+                            recGItem.Modify();
+                        end;
+                    until recTempStatement2.Next() = 0;
+
+                //block the customer that was unblock before posting
+                recTempStatement3.Reset();
+                recTempStatement3.SetRange("No.", recItem."No.");
+
+                if recTempStatement2.FindFirst() then begin
+                    recGCustomer.Reset();
+                    recGCustomer.SetRange("No.", recTempStatement3."No. Series.");
+
+                    if recGCustomer.FindFirst() then begin
+                        recGCustomer.Blocked := recGCustomer.Blocked::All;
+                        recGCustomer.Modify();
+                    end;
+                end;
+
             until recItem.Next() = 0;
 
         recSalesSetup.Get();
@@ -202,7 +236,7 @@ codeunit 68806 BMGPostBulkOpenStatement
                     if recMondayTicket.FindLast() then begin
                         recMondayTicket2.Init();
                         recMondayTicket2."Entry No." := recMondayTicket."Entry No." + 1;
-                        recMondayTicket2."BMG Assignee ID" := '98458747';
+                        recMondayTicket2."BMG Assignee ID" := '100473531'; //RM - '98458747';
                         recMondayTicket2."BMG Subject" := txtSubject;
                         recMondayTicket2."BMG Comment" := 'If this is not resolved before 10:00 AM, it will delay the distribution of sales reports to leaders.';
                         recMondayTicket2."Type of Request" := recMondayTicket2."Type of Request"::Incident;
@@ -234,7 +268,7 @@ codeunit 68806 BMGPostBulkOpenStatement
                              Format(recMondayTicket2."BMG Priority"),
                              Format(recMondayTicket2."BMG Location"),
                              recMondayTicket2."BMG Description",
-                             recMondayTicket2);
+                             recMondayTicket2, 2);
                     //codMondayMgt.ComposeTicket(txtSubject,
                     //'If this is not resolved before 10:00 AM, it will delay the distribution of sales reports to leaders.',
                     //'Incident', 'HIGH', 'Head Office - Finance', txtMondayDescription, recMondayTicket2);
@@ -249,6 +283,7 @@ codeunit 68806 BMGPostBulkOpenStatement
         recLSCTransSales: Record "LSC Trans. Sales Entry";
         recLSCTransStatus: Record "LSC Transaction Status";
         recLItem: Record Item;
+        codLItem: Code[20];
     begin
         recLSCTransSales.Reset();
         recLSCTransSales.SetRange("Trans. Date", WorkDate());
@@ -261,10 +296,14 @@ codeunit 68806 BMGPostBulkOpenStatement
                 recLItem.Reset();
                 recLItem.SetRange("No.", recLSCTransSales."Item No.");
 
+                codLItem := '';
+
                 if recLItem.FindFirst() then begin
                     if recLItem.Blocked then begin
                         recLItem.Blocked := false;
                         recLItem.Modify();
+
+                        codLItem := recLItem."No.";
                     end;
                     //Message('Item no. %1 is blocked.', recLSCTransSales."Item No.");
                     //Message('Item no. %1 is not blocked.', recLSCTransSales."Item No.");
@@ -279,6 +318,12 @@ codeunit 68806 BMGPostBulkOpenStatement
                     if recLSCTransStatus.FindFirst() then begin
                         recLSCTransStatus."Items Blocked" := recLSCTransStatus."Items Blocked" - 1;
                         recLSCTransStatus.Modify();
+
+                        recTempStatement2.Init();
+                        recTempStatement2."Store No." := recLSCTransSales."Store No.";
+                        recTempStatement2."No." := recLSCTransStatus."Statement No.";
+                        recTempStatement2."No. Series." := codLItem;
+                        if recTempStatement2.Insert() then;
                     end;
 
                 end;
@@ -290,6 +335,7 @@ codeunit 68806 BMGPostBulkOpenStatement
         recTransHeader: Record "LSC Transaction Header";
         recLSCTransStatus: Record "LSC Transaction Status";
         recCustomer: Record Customer;
+        codLCustomer: Code[20];
     begin
         recTransHeader.Reset();
         recTransHeader.SetRange(Date, WorkDate());
@@ -303,7 +349,8 @@ codeunit 68806 BMGPostBulkOpenStatement
                 if recCustomer.FindFirst() then begin
                     if recCustomer.IsBlocked() then begin
                         recCustomer.Blocked := recCustomer.Blocked::" ";
-                        recCustomer.Modify()
+                        recCustomer.Modify();
+                        codLCustomer := recCustomer."No.";
                     end;
                     recLSCTransStatus.Reset();
                     recLSCTransStatus.SetRange("Store No.", recTransHeader."Store No.");
@@ -313,6 +360,12 @@ codeunit 68806 BMGPostBulkOpenStatement
                     if recLSCTransStatus.FindFirst() then begin
                         recLSCTransStatus."Blocked Customer" := false;
                         recLSCTransStatus.Modify();
+
+                        recTempStatement3.Init();
+                        recTempStatement3."Store No." := recTransHeader."Store No.";
+                        recTempStatement3."No." := recLSCTransStatus."Statement No.";
+                        recTempStatement3."No. Series." := codLCustomer;
+                        if recTempStatement3.Insert() then;
                     end;
                 end;
             until recTransHeader.Next() = 0;
@@ -322,6 +375,8 @@ codeunit 68806 BMGPostBulkOpenStatement
         recStore: Record "LSC Store";
         recOpenStatement: Record "LSC Statement";
         recTempStatement: Record "LSC Statement" temporary;
+        recTempStatement2: Record "LSC Statement" temporary;
+        recTempStatement3: Record "LSC Statement" temporary;
         recOpenStatementLine: Record "LSC Statement Line";
         recOpenStatementLine2: Record "LSC Statement Line";
         recLSCTransStatus: Record "LSC Transaction Status";

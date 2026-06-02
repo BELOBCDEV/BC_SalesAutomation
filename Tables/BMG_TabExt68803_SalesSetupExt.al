@@ -14,6 +14,10 @@ tableextension 68803 BMGSalesSetup extends "Sales & Receivables Setup"
         {
             DataClassification = CustomerContent;
         }
+        field(68803; "Cross-Dept Request Board ID"; Text[50])
+        {
+            DataClassification = CustomerContent;
+        }
     }
 
     keys

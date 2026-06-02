@@ -30,6 +30,7 @@ codeunit 68808 SendMondayTickets
             recStoreCheck.Reset();
             recStoreCheck.SetRange("Store No.", CurrentStore);
             recStoreCheck.SetRange(Date, pDate);
+            recStoreCheck.SetFilter("Entry Status", '<>%1', recStoreCheck."Entry Status"::Voided);
             recStoreCheck.SetAutoCalcFields("Posted Statement No.");
             if recStoreCheck.FindSet() then
                 repeat
@@ -90,7 +91,7 @@ codeunit 68808 SendMondayTickets
             Format(recMondayTicket."BMG Priority"),
             Format(recMondayTicket."BMG Location"),
             recMondayTicket."BMG Description",
-            recMondayTicket);
+            recMondayTicket, 2);
         Clear(pMondayMgt);
     end;
 }

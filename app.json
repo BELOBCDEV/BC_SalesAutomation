@@ -2,7 +2,7 @@
   "id": "5a82dd42-6762-45bb-b7e0-8b16672d113e",
   "name": "BMG_SALESAUTOMATION",
   "publisher": "BELO MEDICAL GROUP",
-  "version": "1.0.0.19",
+  "version": "1.0.0.37",
   "brief": "",
   "description": "",
   "privacyStatement": "",
@@ -42,4 +42,5 @@
   "features": [
     "NoImplicitWith"
   ]
+  
 }

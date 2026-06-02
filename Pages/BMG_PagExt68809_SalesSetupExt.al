@@ -18,6 +18,10 @@ pageextension 68809 BMGSalesSetupExt extends "Sales & Receivables Setup"
                 {
                     ApplicationArea = All;
                 }
+                field("Cross-Dept Request Board ID"; Rec."Cross-Dept Request Board ID")
+                {
+                    ApplicationArea = All;
+                }
                 field("Enable Sending to Monday"; Rec."Enable Sending to Monday")
                 {
                     ApplicationArea = All;
