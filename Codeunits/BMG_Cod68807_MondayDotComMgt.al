@@ -55,36 +55,51 @@ codeunit 68807 BMGMondayDotComMgt
             if GuiAllowed then
                 Error('Please select an Assignee before submitting.');
 
-        ColValues :=
-            '{"person":{"personsAndTeams":[{"id":' + pRecMondayTicket."BMG Assignee ID" + ',"kind":"person"}]}' +
-            ',"short_textk4s2qy1k":"' + EscapeJson(RequesterName) + '"' +
-            ',"long_text_mm1z55c4":{"text":"' + EscapeJson(pComment) + '"}' +
-            ',"long_text":{"text":"' + EscapeJson(pDescription) + '"}' +
-            ',"single_selectd87kj7c":{"label":"' + EscapeJson(pTypeOfRequest) + '"}' +
-            ',"status_1":{"label":"' + EscapeJson(pPriority) + '"}' +
-            ',"single_selectyi1k98z":{"label":"' + EscapeJson(pLocation) + '"}' +
-            ',"dropdown_mm1d8yh0":{"labels":["Application - Business Central"]}' +
-            ',"email_mm02gjqa":{"email":"' + EscapeJson(RequesterEmail) + '","text":"' + EscapeJson(RequesterEmail) + '"}}';
-
         recSalesSetup.Get();
-        //'5026308475'
         case pIntBoard of
             1:
-                BoardID := recSalesSetup."Corp IT Ticket Board ID";
+                begin
+                    BoardID := recSalesSetup."Corp IT Ticket Board ID";
+                    ColValues :=
+                        '{"person":{"personsAndTeams":[{"id":' + pRecMondayTicket."BMG Assignee ID" + ',"kind":"person"}]}' +
+                        ',"short_textk4s2qy1k":"' + EscapeJson(RequesterName) + '"' +
+                        ',"long_text_mm1z55c4":{"text":"' + EscapeJson(pComment) + '"}' +
+                        ',"long_text":{"text":"' + EscapeJson(pDescription) + '"}' +
+                        ',"single_selectd87kj7c":{"label":"' + EscapeJson(pTypeOfRequest) + '"}' +
+                        ',"status_1":{"label":"' + EscapeJson(pPriority) + '"}' +
+                        ',"single_selectyi1k98z":{"label":"' + EscapeJson(pLocation) + '"}' +
+                        ',"dropdown_mm1d8yh0":{"labels":["Application - Business Central"]}' +
+                        ',"email_mm02gjqa":{"email":"' + EscapeJson(RequesterEmail) + '","text":"' + EscapeJson(RequesterEmail) + '"}}';
+                    NewItemId := CreateTicket(BoardID, 'topics', pSubject, ColValues, IctTicketNo);
+                    pRecMondayTicket."BMG Ticket ID" := FetchColumnText(NewItemId, 'pulse_id_mm02vm99');
+                    pRecMondayTicket."BMG Assignee" := FetchColumnText(NewItemId, 'person');
+                end;
             2:
-                BoardID := recSalesSetup."Cross-Dept Request Board ID";
+                begin
+                    BoardID := recSalesSetup."Cross-Dept Request Board ID";
+                    ColValues :=
+                        '{"multiple_person_mm1y7r6q":{"personsAndTeams":[{"id":' + pRecMondayTicket."BMG Assignee ID" + ',"kind":"person"}]}' +
+                        ',"text_mm1yb5vc":"' + EscapeJson(RequesterName) + '"' +
+                        ',"long_text_mm1y8eg":{"text":"' + EscapeJson(pDescription + ' ' + pComment) + '"}' +
+                        ',"color_mm1yd5b8":{"label":"' + EscapeJson(pTypeOfRequest) + '"}' +
+                        ',"color_mm1yfsmv":{"label":"' + EscapeJson(pPriority) + '"}' +
+                        ',"color_mm1ytd8x":{"label":"' + EscapeJson(pLocation) + '"}' +
+                        ',"dropdown_mm1yw1zx":{"labels":["Application - Business Central"]}' +
+                        ',"email_mm1y5404":{"email":"' + EscapeJson(RequesterEmail) + '","text":"' + EscapeJson(RequesterEmail) + '"}}';
+                    NewItemId := CreateTicket(BoardID, '', pSubject, ColValues, IctTicketNo);
+                    //if NewItemId = '' then
+                    //    Error('Ticket creation on Board 2 failed. Verify the Cross-Dept Request Board ID in Sales Setup and that the API token has access.');
+                    pRecMondayTicket."BMG Ticket ID" := FetchColumnText(NewItemId, 'pulse_id_mm1ygfyb');
+                    pRecMondayTicket."BMG Assignee" := FetchColumnText(NewItemId, 'multiple_person_mm1y7r6q');
+                end;
         end;
 
-        NewItemId := CreateTicket(BoardID, 'topics', pSubject, ColValues, IctTicketNo);
-
         pRecMondayTicket."BMG Monday Item ID" := NewItemId;
-        pRecMondayTicket."BMG Ticket ID" := FetchColumnText(NewItemId, 'pulse_id_mm02vm99');
-        pRecMondayTicket."BMG Assignee" := FetchColumnText(NewItemId, 'person');
         pRecMondayTicket."BMG Requestor Email" := RequesterEmail;
         pRecMondayTicket."Date Submitted" := CurrentDateTime;
         pRecMondayTicket.Modify();
         if GuiAllowed then
-            Message('Ticket Number %1 with Ticket ID %2 has been created.', pRecMondayTicket."BMG Ticket ID", NewItemId);
+            Message('Ticket Number %1 has been created.', pRecMondayTicket."BMG Ticket ID");
         exit(NewItemId);
     end;
 
@@ -168,12 +183,13 @@ codeunit 68807 BMGMondayDotComMgt
         ResponseBody: Text;
     begin
         JVariables.Add('boardId', pBoardId);
-        JVariables.Add('groupId', pGroupId);
+        if pGroupId <> '' then
+            JVariables.Add('groupId', pGroupId);
         JVariables.Add('itemName', pItemName);
         if pColumnValues <> '' then
             JVariables.Add('columnValues', pColumnValues);
 
-        JRequest.Add('query', BuildMutationQuery(pColumnValues <> ''));
+        JRequest.Add('query', BuildMutationQuery(pColumnValues <> '', pGroupId));
         JRequest.Add('variables', JVariables);
         JRequest.WriteTo(RequestBody);
 
@@ -195,6 +211,8 @@ codeunit 68807 BMGMondayDotComMgt
         HttpResponse.Content.ReadAs(ResponseBody);
         if not HttpResponse.IsSuccessStatusCode() then
             Error(ApiErrLbl, HttpResponse.HttpStatusCode, ResponseBody);
+
+        CheckGraphQLErrors(ResponseBody);
 
         exit(ParseItemId(ResponseBody, pIctTicketNo));
     end;
@@ -335,6 +353,8 @@ codeunit 68807 BMGMondayDotComMgt
                 pRec.Validate("BMG Assignee User", Enum::BMGMondayAssignees::tfernandez);
             'Victor Michael Buenavista':
                 pRec.Validate("BMG Assignee User", Enum::BMGMondayAssignees::"Victor Michael Buenavista");
+            'Trina Aquino':
+                pRec.Validate("BMG Assignee User", Enum::BMGMondayAssignees::"Trina Aquino");
         end;
     end;
 
@@ -475,19 +495,67 @@ codeunit 68807 BMGMondayDotComMgt
         exit(ApiToken);
     end;
 
-    local procedure BuildMutationQuery(pIncludeColumnValues: Boolean): Text
+    local procedure CheckGraphQLErrors(pResponseBody: Text)
     var
-        IctColId: Text;
+        JRoot: JsonObject;
+        JToken: JsonToken;
+        JArray: JsonArray;
+        JErrToken: JsonToken;
+        ErrMsg: Text;
+        ExtMsg: Text;
+        ColId: Text;
     begin
-        IctColId := 'pulse_id_mm02vm99';
-        if pIncludeColumnValues then
-            exit('mutation ($boardId: ID!, $groupId: String!, $itemName: String!, $columnValues: JSON) ' +
-                 '{ create_item (board_id: $boardId, group_id: $groupId, item_name: $itemName, column_values: $columnValues) ' +
-                 '{ id column_values(ids: ["' + IctColId + '"]) { text } } }');
+        if not JRoot.ReadFrom(pResponseBody) then
+            exit;
+        if not JRoot.Get('errors', JToken) then
+            exit;
+        if not JToken.IsArray() then
+            exit;
+        JArray := JToken.AsArray();
+        if not JArray.Get(0, JErrToken) then
+            exit;
+        if not JErrToken.IsObject() then
+            exit;
+        if JErrToken.AsObject().Get('message', JToken) then
+            ErrMsg := JToken.AsValue().AsText();
+        // Try to get extra detail from extensions.error_data[0]
+        if JErrToken.AsObject().Get('extensions', JToken) then
+            if JToken.IsObject() then
+                if JToken.AsObject().Get('error_data', JToken) then
+                    if JToken.IsArray() then
+                        if JToken.AsArray().Get(0, JErrToken) then
+                            if JErrToken.IsObject() then begin
+                                if JErrToken.AsObject().Get('message', JToken) then
+                                    ExtMsg := JToken.AsValue().AsText();
+                                if JErrToken.AsObject().Get('columnIds', JToken) then
+                                    if JToken.IsArray() then
+                                        if JToken.AsArray().Get(0, JErrToken) then
+                                            ColId := JErrToken.AsValue().AsText();
+                            end;
+        if ErrMsg <> '' then
+            Error('Monday.com API error: %1\nColumn: %2\nDetail: %3', ErrMsg, ColId, ExtMsg);
+    end;
 
-        exit('mutation ($boardId: ID!, $groupId: String!, $itemName: String!) ' +
-             '{ create_item (board_id: $boardId, group_id: $groupId, item_name: $itemName) ' +
-             '{ id column_values(ids: ["' + IctColId + '"]) { text } } }');
+    local procedure BuildMutationQuery(pIncludeColumnValues: Boolean; pGroupId: Text): Text
+    var
+        GroupPart: Text;
+    begin
+        if pGroupId <> '' then
+            GroupPart := ', group_id: $groupId';
+
+        if pIncludeColumnValues then begin
+            if pGroupId <> '' then
+                exit('mutation ($boardId: ID!, $groupId: String!, $itemName: String!, $columnValues: JSON) ' +
+                     '{ create_item (board_id: $boardId' + GroupPart + ', item_name: $itemName, column_values: $columnValues) { id } }');
+            exit('mutation ($boardId: ID!, $itemName: String!, $columnValues: JSON) ' +
+                 '{ create_item (board_id: $boardId, item_name: $itemName, column_values: $columnValues) { id } }');
+        end;
+
+        if pGroupId <> '' then
+            exit('mutation ($boardId: ID!, $groupId: String!, $itemName: String!) ' +
+                 '{ create_item (board_id: $boardId' + GroupPart + ', item_name: $itemName) { id } }');
+        exit('mutation ($boardId: ID!, $itemName: String!) ' +
+             '{ create_item (board_id: $boardId, item_name: $itemName) { id } }');
     end;
 
     local procedure ParseItemId(pResponseBody: Text; var pIctTicketNo: Text): Text

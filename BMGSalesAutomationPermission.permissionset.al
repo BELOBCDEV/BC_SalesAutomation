@@ -15,5 +15,9 @@ permissionset 68800 BMG_SalesAutomation
         table BMGMondayTickets = X,
         page BMGMondayTickets = X,
         codeunit SendMondayTickets = X,
-        page BMGMondayTicketList = X;
+        page BMGMondayTicketList = X,
+        codeunit "BMG CO Prepay. Inv. Mgt Public" = X,
+        codeunit "BMG CO Prepayment Invoice Mgt" = X,
+        query "BMG Statement Post Discounts" = X,
+        codeunit "BMG Transaction FreeText Utils" = X;
 }

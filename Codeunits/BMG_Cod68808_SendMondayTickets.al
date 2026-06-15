@@ -1,7 +1,10 @@
 codeunit 68808 SendMondayTickets
 {
     trigger OnRun()
+    var
+        MondayMgt: Codeunit BMGMondayDotComMgt;
     begin
+        //CreateMissingStatementTicket('B002', 20260603D, MondayMgt);
         SendTicketsForMissingStatements(WorkDate());
     end;
 
@@ -70,19 +73,16 @@ codeunit 68808 SendMondayTickets
         Comment := 'If this is not resolved before 10:00 AM, it will delay the distribution of sales reports to leaders.';
 
         recMondayTicket.Init();
-        recMondayTicket.Insert(true);  // OnInsert auto-fills Name and Email from current user
-
+        recMondayTicket."BMG Assignee ID" := '98458747'; //trina - '100473531';
         recMondayTicket."BMG Subject" := Subject;
-        recMondayTicket."BMG Description" := Description;
+        recMondayTicket."BMG Comment" := Comment;
         recMondayTicket."Type of Request" := recMondayTicket."Type of Request"::Incident;
         recMondayTicket."BMG Priority" := recMondayTicket."BMG Priority"::High;
         recMondayTicket."BMG Location" := recMondayTicket."BMG Location"::"Head Office - Finance";
-        recMondayTicket."BMG Comment" := Comment;
-        recMondayTicket.Validate("BMG Assignee User", Enum::BMGMondayAssignees::"Rommel Marquez");
-        recMondayTicket.Modify();
+        recMondayTicket."BMG Description" := Description;
+        recMondayTicket.Insert(true);  // AutoIncrement assigns Entry No.; OnInsert fills Name + Email
 
         recSalesSetup.Get();
-
         pMondayMgt.SetApiToken(recSalesSetup."API Key 2");
         pMondayMgt.ComposeTicket(
             recMondayTicket."BMG Subject",
@@ -91,7 +91,7 @@ codeunit 68808 SendMondayTickets
             Format(recMondayTicket."BMG Priority"),
             Format(recMondayTicket."BMG Location"),
             recMondayTicket."BMG Description",
-            recMondayTicket, 2);
+            recMondayTicket, 1);
         Clear(pMondayMgt);
     end;
 }

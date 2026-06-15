@@ -143,9 +143,15 @@ page 68807 BMGMondayTickets
                 var
                     MondayMgt: Codeunit BMGMondayDotComMgt;
                     recSalesSetup: Record "Sales & Receivables Setup";
+                    intFlag: Integer;
                 begin
 
                     recSalesSetup.Get();
+
+                    if Rec."BMG Assignee User" = Rec."BMG Assignee User"::"Trina Aquino" then
+                        intFlag := 2
+                    else
+                        intFlag := 1;
 
                     Clear(MondayMgt);
                     MondayMgt.SetApiToken(recSalesSetup."API Key 2");
@@ -156,7 +162,7 @@ page 68807 BMGMondayTickets
                         Format(Rec."BMG Priority"),
                         Format(Rec."BMG Location"),
                         Rec."BMG Description",
-                        Rec, 1);
+                        Rec, intFlag);
                     CurrPage.Update(false);
                 end;
             }
