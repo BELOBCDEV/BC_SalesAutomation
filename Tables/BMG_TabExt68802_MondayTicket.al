@@ -90,6 +90,8 @@ table 68802 BMGMondayTickets
                         Rec."BMG Assignee ID" := '100753541';
                     Enum::BMGMondayAssignees::"Victor Michael Buenavista":
                         Rec."BMG Assignee ID" := '95633921';
+                    Enum::BMGMondayAssignees::"Trina Aquino":
+                        Rec."BMG Assignee ID" := '100473531';
                     else
                         Rec."BMG Assignee ID" := '';
                 end;

@@ -243,7 +243,7 @@ codeunit 68801 "BMG LSC Statement-Post"// implements "LSC IStatementPostControll
                                   TransIncomeExpenseEntry."Transaction No.");
                                 PostIncomeExpLine(DocumentNo);
                             until TransIncomeExpenseEntry.Next() = 0;
-                            /*
+                            //!!!
                             if COPrepaymentInvoiceMan.IsCustomerOrderPrepaymentInvoiceMarked(Transaction."Customer Order ID") then
                                 if CollectionBySalesOrder(Transaction."Customer Order ID") then begin
                                     PostingBuffer[1].Reset();
@@ -264,7 +264,7 @@ codeunit 68801 "BMG LSC Statement-Post"// implements "LSC IStatementPostControll
                                             end;
                                         end;
                                 end;
-                            */
+
                         end;
                     end;
 
@@ -1291,7 +1291,7 @@ codeunit 68801 "BMG LSC Statement-Post"// implements "LSC IStatementPostControll
         TransPostingFunctions: Codeunit "LSC Trans. Posting Functions";
         BufferUtility: Codeunit "LSC Buffer Utility";
         BOUtils: Codeunit "LSC BO Utils";
-        //COPrepaymentInvoiceMan: Codeunit "LSC CO Prepayment Invoice Mgt";
+        COPrepaymentInvoiceMan: Codeunit "BMG CO Prepayment Invoice Mgt";
         Win: Dialog;
         GLAccountNumber: Code[20];
         BankAccNo: Code[20];
@@ -1836,11 +1836,11 @@ codeunit 68801 "BMG LSC Statement-Post"// implements "LSC IStatementPostControll
         Handled: Boolean;
         IsPrepaymentInvoiceMarked: Boolean;
     begin
-        /*
+        //!!!
         if Transaction."Customer Order ID" <> '' then
             if COPrepaymentInvoiceMan.IsCustomerOrderPrepaymentInvoiceMarked(Transaction."Customer Order ID") then
                 IsPrepaymentInvoiceMarked := true;
-        */
+
 
         IncomeExpenseAcc.Get(Store."No.", TransIncomeExpenseEntry."No.");
 
@@ -1855,10 +1855,10 @@ codeunit 68801 "BMG LSC Statement-Post"// implements "LSC IStatementPostControll
         No[1] := Store."No.";
         TableID[2] := Database::"G/L Account";
 
-        //!!!if IsPrepaymentInvoiceMarked then
-        //!!!    No[2] := COPrepaymentInvoiceMan.GetPrepaymentInvoiceAccountNo(Transaction."Customer Order ID")
-        //!!!else
-        No[2] := IncomeExpenseAcc."G/L Account";
+        if IsPrepaymentInvoiceMarked then
+            No[2] := COPrepaymentInvoiceMan.GetPrepaymentInvoiceAccountNo(Transaction."Customer Order ID")
+        else
+            No[2] := IncomeExpenseAcc."G/L Account";
 
         Len := 2;
         if Transaction."Customer No." <> '' then begin
@@ -2354,7 +2354,7 @@ codeunit 68801 "BMG LSC Statement-Post"// implements "LSC IStatementPostControll
                     if AmountToDeposit <> 0 then
                         PostCustomerOrderPayment(SellToCustNo, TotalAmountPaid, AmountToDeposit);
 
-                /*
+                //!!!
                 if COPrepaymentInvoiceMan.IsCustomerOrderPrepaymentInvoiceMarked(Transaction."Customer Order ID") then
                     if (Transaction.Payment = 0) and (Transaction."No. of Items" > 0) then begin
                         TransIncomeExpenseEntry.SetRange("Store No.", Transaction."Store No.");
@@ -2367,7 +2367,7 @@ codeunit 68801 "BMG LSC Statement-Post"// implements "LSC IStatementPostControll
                                 PostPaymentToCustomer(DocNumber, CustomerRec."No.", TransIncomeExpenseEntry.Amount, '');
                         end;
                     end;
-                */
+
             end;
 
         if TempUnblocking then begin
@@ -2381,7 +2381,7 @@ codeunit 68801 "BMG LSC Statement-Post"// implements "LSC IStatementPostControll
     local procedure CalculateTotalAmountPaid(var AmountToDeposit: Decimal): Decimal
     begin
         if CollectionBySalesOrder(Transaction."Customer Order ID") then begin
-            /*
+            //!!!
             if (Transaction."Amount to Account" = 0) and (Transaction.Payment = -(Transaction."Gross Amount" + Transaction."Income/Exp. Amount")) then
                 if COPrepaymentInvoiceMan.IsCustomerOrderPrepaymentInvoiceMarked(Transaction."Customer Order ID") then begin
                     if Transaction."Gross Amount" = 0 then
@@ -2390,14 +2390,14 @@ codeunit 68801 "BMG LSC Statement-Post"// implements "LSC IStatementPostControll
                         exit(-Transaction."Gross Amount")
                 end else
                     exit(Transaction.Payment);
-            
+
             if (Transaction."Amount to Account" <> 0) and (Transaction."Amount to Account" < -(Transaction."Gross Amount" + Transaction."Income/Exp. Amount")) then begin
                 if COPrepaymentInvoiceMan.IsCustomerOrderPrepaymentInvoiceMarked(Transaction."Customer Order ID") then begin
                     exit(Transaction.Payment - Transaction."Amount to Account")
                 end else
                     exit(TotalPayment - Transaction."Amount to Account");
             end;
-            */
+
             if (Transaction."Amount to Account" <> 0) and (Transaction."Amount to Account" = -(Transaction."Gross Amount" + Transaction."Income/Exp. Amount")) then begin
                 exit(0);
             end;
@@ -2425,12 +2425,12 @@ codeunit 68801 "BMG LSC Statement-Post"// implements "LSC IStatementPostControll
 
             exit(TotalPayment + Transaction."Income/Exp. Amount");
         end;
-        /*
+        //!!!
         if COPrepaymentInvoiceMan.IsCustomerOrderPrepaymentInvoiceMarked(Transaction."Customer Order ID") then begin
             if Transaction."Income/Exp. Amount" > 0 then
                 exit(Transaction.Payment - Transaction."Amount to Account");
         end;
-        */
+
 
         if (Transaction."Amount to Account" > 0) and (Transaction."Amount to Account" = -(Transaction."Gross Amount" + Transaction."Income/Exp. Amount")) then begin
             exit(0);
@@ -2507,12 +2507,12 @@ codeunit 68801 "BMG LSC Statement-Post"// implements "LSC IStatementPostControll
 
     local procedure HandleNegativePaymentForCustomerOrder(var GenJournlDocumentType: Enum "Gen. Journal Document Type"; var AmountToPost: Decimal)
     begin
-        /*
+        //!!!
         if COPrepaymentInvoiceMan.IsCustomerOrderPrepaymentInvoiceMarked(Transaction."Customer Order ID") then begin
             SkipCLEPosting := true; // the posting to Customer will go thru Business Central Prepayment invoice
             exit;
         end;
-        */
+
 
         if Transaction.Payment = Transaction."Amount to Account" then begin
             AmountToPost := -Transaction."Amount to Account";
@@ -2541,7 +2541,7 @@ codeunit 68801 "BMG LSC Statement-Post"// implements "LSC IStatementPostControll
 
     local procedure HandleZeroPaymentForCustomerOrder(var AmountToPost: Decimal; var SkipCLEPosting: Boolean)
     begin
-        /*
+        //!!!
         if (Transaction."Gross Amount" < 0) and (Transaction."Gross Amount" = -Transaction."Income/Exp. Amount") then begin
             if COPrepaymentInvoiceMan.IsCustomerOrderPrepaymentInvoiceMarked(Transaction."Customer Order ID") then begin
                 AmountToPost := Transaction."Income/Exp. Amount";
@@ -2552,7 +2552,6 @@ codeunit 68801 "BMG LSC Statement-Post"// implements "LSC IStatementPostControll
                 exit;
             end;
         end;
-        */
 
         if Transaction."Gross Amount" + Transaction."Income/Exp. Amount" = 0 then begin
             AmountToPost := 0;
@@ -2565,12 +2564,12 @@ codeunit 68801 "BMG LSC Statement-Post"// implements "LSC IStatementPostControll
 
     local procedure HandlePositivePaymentForCustomerOrder(var AmountToPost: Decimal; var SkipCLEPosting: Boolean)
     begin
-        /*
+        //!!!
         if COPrepaymentInvoiceMan.IsCustomerOrderPrepaymentInvoiceMarked(Transaction."Customer Order ID") then begin
             AmountToPost := Transaction."Gross Amount";
             exit;
         end;
-        */
+
 
         if (Transaction."Gross Amount" = 0) and (Transaction.Payment = -Transaction."Income/Exp. Amount") then begin
             if CollectionBySalesOrder(Transaction."Customer Order ID") then begin
@@ -2731,11 +2730,11 @@ codeunit 68801 "BMG LSC Statement-Post"// implements "LSC IStatementPostControll
         OnBeforePostToCustomer(Statement, Transaction, IsHandled);
         if IsHandled then
             exit;
-        /*
+        //!!!
         if COPrepaymentInvoiceMan.IsCustomerOrderPrepaymentInvoiceMarked(Transaction."Customer Order ID") then
             if AmountToPost = 0 then
                 exit;
-        */
+
         if (Transaction.Payment = 0) and (Transaction."Gross Amount" = 0) and (Transaction."Income/Exp. Amount" = 0) then begin
             IsHandled := false;
             OnBeforeCLESkip(AmountToPost, IsHandled);
@@ -3276,7 +3275,7 @@ codeunit 68801 "BMG LSC Statement-Post"// implements "LSC IStatementPostControll
         Location: Record Location;
         SalesOrderItemBuffer: Record "LSC Item Finder Set" temporary;
         SalesPost: Codeunit "Sales-Post";
-        TransactionFreeTextUtils: Codeunit "LSC Transaction FreeText Utils";
+        TransactionFreeTextUtils: Codeunit "BMG Transaction FreeText Utils";
         DocumentNo: Code[20];
         SalesTypeCode: Code[20];
         IncExpAmount: Decimal;
@@ -3436,7 +3435,7 @@ codeunit 68801 "BMG LSC Statement-Post"// implements "LSC IStatementPostControll
                 OnBeforeModifySalesHeaderInMakeOrder(SalesHeader, Transaction, Statement);
                 SalesHeader.Modify();
 
-                //!!!TransactionFreeTextUtils.AddTransTextLinesToSalesDocument(Transaction, SalesHeader, 0, 0);
+                TransactionFreeTextUtils.AddTransTextLinesToSalesDocument(Transaction, SalesHeader, 0, 0);
 
                 TransPostingFunctions.ClearItemNoBuffer();
                 LineNo := 0;
@@ -3494,7 +3493,7 @@ codeunit 68801 "BMG LSC Statement-Post"// implements "LSC IStatementPostControll
                         OnAfterSalesLineModify(SalesLine, TransSalesEntry, TransIncomeExpenseEntry);
 
                         InsertSalesLineDiscEntry(TransDiscountEntryTemp, TransSalesEntry, SalesLine);
-                        //!!!TransactionFreeTextUtils.AddTransTextLinesToSalesDocument(Transaction, SalesHeader, TransSalesEntry."Line No.", SalesLine."Line No.");
+                        TransactionFreeTextUtils.AddTransTextLinesToSalesDocument(Transaction, SalesHeader, TransSalesEntry."Line No.", SalesLine."Line No.");
                         TransPostingFunctions.ResetItemBlockReserve();
                     until TransSalesEntry.Next() = 0;
 
@@ -4568,9 +4567,9 @@ codeunit 68801 "BMG LSC Statement-Post"// implements "LSC IStatementPostControll
 
     internal procedure CalculateTransactionDiscounts(var TransDiscEntryTemp: Record "LSC Trans. Discount Entry" temporary; StatementNo: Code[20])
     var
-    //StatementPostDiscounts: Query "LSC Statement Post Discounts";
+        StatementPostDiscounts: Query "BMG Statement Post Discounts";
     begin
-        /*
+        //!!!
         StatementPostDiscounts.SetRange(StatementNo, StatementNo);
         StatementPostDiscounts.Open();
         while StatementPostDiscounts.Read() do begin
@@ -4582,7 +4581,7 @@ codeunit 68801 "BMG LSC Statement-Post"// implements "LSC IStatementPostControll
             TransDiscEntryTemp."Discount Amount" := StatementPostDiscounts.DiscountAmount;
             TransDiscEntryTemp.Insert();
         end;
-        */
+
     end;
 
     internal procedure TestDeleteHeader(pStatement: Record "LSC Statement"; var pPostedStatement: Record "LSC Posted Statement")
@@ -5647,7 +5646,7 @@ codeunit 68801 "BMG LSC Statement-Post"// implements "LSC IStatementPostControll
         CLEntries: record "Cust. Ledger Entry";
         GLEntries: Record "G/L Entry";
     begin
-        /*
+        //!!!
         if COPrepaymentInvoiceMan.IsCustomerOrderPrepaymentInvoiceMarked(CustomerOrderID) then begin
             CLEntries.SetRange("LSC Statement No.", '');
             CLEntries.SetRange("LSC Customer Order ID", CustomerOrderID);
@@ -5657,7 +5656,7 @@ codeunit 68801 "BMG LSC Statement-Post"// implements "LSC IStatementPostControll
             GLEntries.SetRange("LSC Customer Order ID", CustomerOrderID);
             GLEntries.ModifyAll("External Document No.", StatementNo);
         end;
-        */
+
     end;
 
     // Internal in 18.4

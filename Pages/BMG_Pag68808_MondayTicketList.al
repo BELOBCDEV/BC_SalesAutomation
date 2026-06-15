@@ -140,6 +140,23 @@ page 68808 BMGMondayTicketList
                     Message('File "%1" attached successfully.', FileName);
                 end;
             }
+
+            action(ShowBoard2Columns)
+            {
+                ApplicationArea = All;
+                Caption = 'Show Board 2 Columns';
+                Image = Info;
+
+                trigger OnAction()
+                var
+                    MondayMgt: Codeunit BMGMondayDotComMgt;
+                    recSalesSetup: Record "Sales & Receivables Setup";
+                begin
+                    recSalesSetup.Get();
+                    MondayMgt.SetApiToken(recSalesSetup."API Key 2");
+                    MondayMgt.ShowBoardColumns(recSalesSetup."Cross-Dept Request Board ID");
+                end;
+            }
         }
         area(Promoted)
         {

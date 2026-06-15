@@ -143,11 +143,12 @@ codeunit 68806 BMGPostBulkOpenStatement
                             recMondayTicket2."Entry No." := recMondayTicket."Entry No." + 1;
                             recMondayTicket2."BMG Assignee ID" := '100473531'; //RM- '98458747';
                             recMondayTicket2."BMG Subject" := txtSubject;
-                            recMondayTicket2."BMG Comment" := StrSubstNo('The Statement No. is %1.', recOpenStatement."No.");
+                            recMondayTicket2."BMG Comment" := StrSubstNo('May we request your assistance in reviewing %1 dated %2', recOpenStatement."Store No.", WorkDate());
                             recMondayTicket2."Type of Request" := recMondayTicket2."Type of Request"::Incident;
                             recMondayTicket2."BMG Priority" := recMondayTicket2."BMG Priority"::Low;
                             recMondayTicket2."BMG Location" := recMondayTicket2."BMG Location"::"Head Office - Finance";
-                            recMondayTicket2."BMG Description" := 'This ticket is created via Business Central';
+                            recMondayTicket2."BMG Description" := 'We noted entries posted to Accounts Receivable - Shortages and Charges\' +
+                                                                  'due to variances between the POS sales amount and the declared amount.';
                             if recMondayTicket2.Insert() then;
                         end;
 
@@ -168,9 +169,11 @@ codeunit 68806 BMGPostBulkOpenStatement
                 end;
 
                 If not bolErrorFound then begin
-                    recItem.Init();
-                    recItem."No." := recOpenStatement."No.";
-                    if recItem.Insert() then;
+                    if HasStatementLines(recOpenStatement."No.") then begin
+                        recItem.Init();
+                        recItem."No." := recOpenStatement."No.";
+                        if recItem.Insert() then;
+                    end;
                     //Message('Statement No. %1 has been included for posting', recItem."No.");
                 end;
 
@@ -236,8 +239,7 @@ codeunit 68806 BMGPostBulkOpenStatement
                     if recMondayTicket.FindLast() then begin
                         recMondayTicket2.Init();
                         recMondayTicket2."Entry No." := recMondayTicket."Entry No." + 1;
-                        recMondayTicket2."BMG Assignee ID" := '100473531'; //RM - '98458747';
-                        recMondayTicket2."BMG Subject" := txtSubject;
+                        recMondayTicket2."BMG Assignee ID" := '98458747'; //trina - 100473531';                        recMondayTicket2."BMG Subject" := txtSubject;
                         recMondayTicket2."BMG Comment" := 'If this is not resolved before 10:00 AM, it will delay the distribution of sales reports to leaders.';
                         recMondayTicket2."Type of Request" := recMondayTicket2."Type of Request"::Incident;
                         recMondayTicket2."BMG Priority" := recMondayTicket2."BMG Priority"::High;
@@ -268,7 +270,7 @@ codeunit 68806 BMGPostBulkOpenStatement
                              Format(recMondayTicket2."BMG Priority"),
                              Format(recMondayTicket2."BMG Location"),
                              recMondayTicket2."BMG Description",
-                             recMondayTicket2, 2);
+                             recMondayTicket2, 1);
                     //codMondayMgt.ComposeTicket(txtSubject,
                     //'If this is not resolved before 10:00 AM, it will delay the distribution of sales reports to leaders.',
                     //'Incident', 'HIGH', 'Head Office - Finance', txtMondayDescription, recMondayTicket2);
@@ -369,6 +371,15 @@ codeunit 68806 BMGPostBulkOpenStatement
                     end;
                 end;
             until recTransHeader.Next() = 0;
+    end;
+
+    procedure HasStatementLines(pStatementNo: Code[20]): Boolean
+    var
+        recStmtLine: Record "LSC Statement Line";
+    begin
+        recStmtLine.Reset();
+        recStmtLine.SetRange("Statement No.", pStatementNo);
+        exit(recStmtLine.FindFirst());
     end;
 
     var
