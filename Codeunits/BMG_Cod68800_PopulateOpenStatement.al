@@ -16,7 +16,8 @@ codeunit 68800 BMGPopulateOpenStatement
         codStatementNo: Code[20];
         codNoSeries: Code[10];
     begin
-
+        //skip deletion of previous workdate
+        /*
         recOpenStatement.Reset();
         recOpenStatement.SetFilter("Posted Date", '<>%1', WorkDate());
 
@@ -31,6 +32,7 @@ codeunit 68800 BMGPopulateOpenStatement
                 recOpenStatement.Delete();
             until recOpenStatement.Next() = 0;
         //recOpenStatement.DeleteAll();
+        */
 
         recStore.Reset();
         recStore.SetRange("Include in Sales Automation", true);
@@ -42,7 +44,7 @@ codeunit 68800 BMGPopulateOpenStatement
 
                 recOpenStatement2.Reset();
                 recOpenStatement2.SetRange("Store No.", codStore);
-                recOpenStatement2.SetRange("Posted Date", WorkDate());
+                recOpenStatement2.SetRange("Posting Date", WorkDate());
 
                 if not recOpenStatement2.FindFirst() then begin
                     recTransHeader.Reset();
