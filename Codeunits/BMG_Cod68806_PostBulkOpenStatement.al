@@ -221,7 +221,7 @@ codeunit 68806 BMGPostBulkOpenStatement
                 end;
 
             until recItem.Next() = 0;
-
+        /* 
         recSalesSetup.Get();
 
         if recSalesSetup."Enable Sending to Monday" then begin
@@ -245,6 +245,7 @@ codeunit 68806 BMGPostBulkOpenStatement
                         recMondayTicket2."BMG Priority" := recMondayTicket2."BMG Priority"::High;
                         recMondayTicket2."BMG Location" := recMondayTicket2."BMG Location"::"Head Office - Finance";
 
+                        txtMondayDescription := 'Unknown Error.';
                         case true of
                             STRPOS(recItem2."No.", '_1') <> 0:
                                 txtMondayDescription := 'No. of Blank UOM Item count is > 0.';
@@ -277,6 +278,7 @@ codeunit 68806 BMGPostBulkOpenStatement
                     Clear(codMondayMgt);
                 until recItem2.Next() = 0;
         end;
+        */
 
     end;
 

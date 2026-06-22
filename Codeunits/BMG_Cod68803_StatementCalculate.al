@@ -1717,6 +1717,10 @@ codeunit 68803 "BMG LSC Statement-Calculate"
         LotOnTransSales: Decimal;
         lText001: Label 'Lot No. %1 does not exist or quantity %2 is not available';
         lText002: Label 'Lot No. %1 has expired or expiration date is invalid';
+        recItemLedgEntry: Record "Item Ledger Entry";
+        decRemQty: Decimal;
+        bolFoundMoreQty: Boolean;
+        bolNoMoreRemainingQty: Boolean;
     begin
         LotNoValid := true;
         SaleIsReturnSale := pTransSalesEntry.Quantity > 0;
@@ -1735,11 +1739,46 @@ codeunit 68803 "BMG LSC Statement-Calculate"
                 QtyOnPosBeforeCurr := GetSerialLotSalesQty(pTransSalesEntry, pTransSalesEntry."Serial No.", pTransSalesEntry."Lot No.", true);
                 AvailQty := LotNoInv - QtyOnPosBeforeCurr;
             end;
+            //!!!
+            //Message('TransSalesCheckLotNo\AvailQty: %1\LotNoInv: %2\QtyOnPosBeforeCurr: %3\Item No. %4', AvailQty, LotNoInv, QtyOnPosBeforeCurr, pTransSalesEntry."Item No.");
             LotOnTransSales := -FindStatementSerialLotNoQty(pStatementNo, pTransSalesEntry);
             if not SaleIsReturnSale then
                 if AvailQty < (LotOnTransSales - pTransSalesEntry.Quantity) then begin
                     pErrorText := StrSubstNo(lText001, pTransSalesEntry."Lot No.", -pTransSalesEntry.Quantity);
-                    LotNoValid := false;
+
+                    recItemLedgEntry.Reset();
+                    recItemLedgEntry.SetRange("Location Code", pTransSalesEntry."Store No.");
+                    recItemLedgEntry.SetRange("Item No.", pTransSalesEntry."Item No.");
+                    recItemLedgEntry.SetRange("Lot No.", pTransSalesEntry."Lot No.");
+
+                    bolNoMoreRemainingQty := false;
+                    if recItemLedgEntry.FindFirst() then
+                        if recItemLedgEntry."Remaining Quantity" < ABS(pTransSalesEntry.Quantity) then
+                            bolNoMoreRemainingQty := true;
+
+                    if bolNoMoreRemainingQty then begin
+                        recItemLedgEntry.Reset();
+                        recItemLedgEntry.SetRange("Location Code", pTransSalesEntry."Store No.");
+                        recItemLedgEntry.SetRange("Item No.", pTransSalesEntry."Item No.");
+                        recItemLedgEntry.SetFilter("Remaining Quantity", '>%1', ABS(pTransSalesEntry.Quantity));
+                        decRemQty := 0;
+                        bolFoundMoreQty := false;
+                        if recItemLedgEntry.FindFirst() then
+                            repeat
+                                if recItemLedgEntry."Remaining Quantity" > pTransSalesEntry.Quantity then begin
+                                    pTransSalesEntry."Original Lot No." := pTransSalesEntry."Lot No.";
+                                    pTransSalesEntry."Lot No." := recItemLedgEntry."Lot No.";
+                                    pTransSalesEntry.Modify();
+                                    bolFoundMoreQty := true;
+                                end;
+                            until (recItemLedgEntry.Next() = 0) OR (bolFoundMoreQty = true);
+
+                        if not bolFoundMoreQty then
+                            LotNoValid := false;
+                    end;
+                    //TEMPONLY //LotNoValid := false;
+                    //!!!
+                    //Message('Item No. %5\AvailQty: %1 < (LotOnTransSales: %2 - pTransSalesEntry.Quantity: %3)\Difference %4', AvailQty, LotOnTransSales, pTransSalesEntry.Quantity, Format(LotOnTransSales - pTransSalesEntry.Quantity), pTransSalesEntry."Item No.");
                 end else begin
                     if not GetStrictExpirationPosting(pTransSalesEntry."Item No.") then
                         exit(LotNoValid);
