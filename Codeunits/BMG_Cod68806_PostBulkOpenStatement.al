@@ -143,11 +143,11 @@ codeunit 68806 BMGPostBulkOpenStatement
                             recMondayTicket2."Entry No." := recMondayTicket."Entry No." + 1;
                             recMondayTicket2."BMG Assignee ID" := '100473531'; //RM- '98458747';
                             recMondayTicket2."BMG Subject" := txtSubject;
-                            recMondayTicket2."BMG Comment" := StrSubstNo('May we request your assistance in reviewing %1 dated %2', recOpenStatement."Store No.", WorkDate());
+                            recMondayTicket2."BMG Comment" := StrSubstNo('May we request your assistance in reviewing %1 dated %2. Statement No. is %3.', recOpenStatement."Store No.", WorkDate(), recOpenStatement."No.");
                             recMondayTicket2."Type of Request" := recMondayTicket2."Type of Request"::Incident;
                             recMondayTicket2."BMG Priority" := recMondayTicket2."BMG Priority"::Low;
                             recMondayTicket2."BMG Location" := recMondayTicket2."BMG Location"::"Head Office - Finance";
-                            recMondayTicket2."BMG Description" := 'We noted entries posted to Accounts Receivable - Shortages and Charges\' +
+                            recMondayTicket2."BMG Description" := 'We noted entries posted to Accounts Receivable - Shortages and Charges ' +
                                                                   'due to variances between the POS sales amount and the declared amount.';
                             if recMondayTicket2.Insert() then;
                         end;
