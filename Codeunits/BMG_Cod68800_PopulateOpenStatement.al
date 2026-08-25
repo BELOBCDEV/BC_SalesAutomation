@@ -50,7 +50,7 @@ codeunit 68800 BMGPopulateOpenStatement
                     recTransHeader.Reset();
                     recTransHeader.SetRange("Store No.", codStore);
                     recTransHeader.SetRange(Date, WorkDate());
-                    recTransHeader.SetRange("Transaction Type", recTransHeader."Transaction Type"::"Tender Decl.");
+                    //recTransHeader.SetRange("Transaction Type", recTransHeader."Transaction Type"::"Tender Decl.");
 
                     if recTransHeader.FindFirst() then begin
                         recOpenStatement.Init();
@@ -76,7 +76,7 @@ codeunit 68800 BMGPopulateOpenStatement
                         recTransHeader.Reset();
                         recTransHeader.SetRange("Store No.", codStore);
                         recTransHeader.SetRange(Date, WorkDate());
-                        recTransHeader.SetRange("Transaction Type", recTransHeader."Transaction Type"::"Tender Decl.");
+                        //recTransHeader.SetRange("Transaction Type", recTransHeader."Transaction Type"::"Tender Decl.");
 
                         if recTransHeader.FindFirst() then begin
                             codStatementCalculate2.Run(recOpenStatement);

@@ -412,6 +412,7 @@ codeunit 68803 "BMG LSC Statement-Calculate"
         CurrExchRate: Record "Currency Exchange Rate";
         POSTerminal_l: Record "LSC POS Terminal";
         ItemStatusLink: Record "LSC Item Status Link";
+        recBMGCustomer: Record BMGCustomers;
         BOUtils: Codeunit "LSC BO Utils";
         ErrorText: Text[250];
         StoreCurrFactor: Decimal;
@@ -447,10 +448,24 @@ codeunit 68803 "BMG LSC Statement-Calculate"
         TransactionStatus."Serial/Lot No. Not Valid" := 0;
         TransactionStatus."No. of Blank UOM Item" := 0;
 
-        if Transaction."Customer No." <> '' then
+        if Transaction."Customer No." <> '' then begin
             if Customer.Get(Transaction."Customer No.") then
                 if Customer.Blocked <> Customer.Blocked::" " then
                     TransactionStatus."Blocked Customer" := true;
+
+            //insert Customer if not found-----
+            if not Customer.Get(Transaction."Customer No.") then begin
+                recBMGCustomer.Reset();
+                recBMGCustomer.SetRange("No.", Transaction."Customer No.");
+
+                if recBMGCustomer.FindFirst() then begin
+                    Customer.Init();
+                    Customer.TransferFields(recBMGCustomer);
+                    if Customer.Insert() then;
+                end;
+            end
+
+        end;
 
         if Transaction."Transaction Code" = Transaction."Transaction Code"::"Sale/Pmt. Difference" then
             TransactionStatus."Sale/Pmt. Difference" := true;
